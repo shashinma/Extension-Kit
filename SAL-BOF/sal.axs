@@ -132,5 +132,71 @@ cmd_whoami.setPreHook(function (id, cmdline, parsed_json, ...parsed_lines) {
     ax.execute_alias(id, cmdline, `execute bof ${bof_path}`, "BOF implementation: whoami /all");
 });
 
-var group_test = ax.create_commands_group("SAL-BOF", [cmd_arp, cmd_cacls, cmd_dir, cmd_env, cmd_ipconfig, cmd_listdns, cmd_netstat, cmd_nslookup, cmd_findobj, cmd_routeprint, cmd_uptime, cmd_useridletime, cmd_whoami]);
+var cmd_winpeas = ax.create_command("winpeas", "Comprehensive Windows privilege escalation enumeration (WinPEAS BOF)", "winpeas");
+// Category flags
+cmd_winpeas.addArgBool("systeminfo", "Search system information");
+cmd_winpeas.addArgBool("userinfo", "Search user information");
+cmd_winpeas.addArgBool("processinfo", "Search processes information");
+cmd_winpeas.addArgBool("servicesinfo", "Search services information");
+cmd_winpeas.addArgBool("applicationsinfo", "Search installed applications information");
+cmd_winpeas.addArgBool("networkinfo", "Search network information");
+cmd_winpeas.addArgBool("eventsinfo", "Display interesting events information");
+cmd_winpeas.addArgBool("activedirectoryinfo", "Quick AD checks (gMSA, AD CS)");
+cmd_winpeas.addArgBool("domain", "Enumerate domain information (alias for activedirectoryinfo)");
+cmd_winpeas.addArgBool("cloudinfo", "Enumerate cloud information");
+cmd_winpeas.addArgBool("windowscreds", "Search windows credentials");
+cmd_winpeas.addArgBool("browserinfo", "Search browser information");
+cmd_winpeas.addArgBool("filesinfo", "Search generic files that can contain credentials");
+cmd_winpeas.addArgBool("fileanalysis", "[NOT RUN BY DEFAULT] Search specific files and regexes (slow)");
+cmd_winpeas.addArgBool("all", "Run all checks including fileanalysis");
+// General flags
+cmd_winpeas.addArgBool("quiet", "Do not print banner");
+cmd_winpeas.addArgBool("wait", "Wait for user input between checks");
+cmd_winpeas.addArgBool("debug", "Display debugging information");
+// Additional checks (slower)
+cmd_winpeas.addArgBool("lolbas", "Run additional LOLBAS check");
+cmd_winpeas.setPreHook(function (id, cmdline, parsed_json, ...parsed_lines) {
+    let bof_path = ax.script_dir() + "_bin/winpeas." + ax.arch(id) + ".o";
+    
+    // Build flags string from parsed arguments
+    let flags_parts = [];
+    
+    // Category flags
+    if (parsed_json["systeminfo"]) flags_parts.push("systeminfo");
+    if (parsed_json["userinfo"]) flags_parts.push("userinfo");
+    if (parsed_json["processinfo"]) flags_parts.push("processinfo");
+    if (parsed_json["servicesinfo"]) flags_parts.push("servicesinfo");
+    if (parsed_json["applicationsinfo"]) flags_parts.push("applicationsinfo");
+    if (parsed_json["networkinfo"]) flags_parts.push("networkinfo");
+    if (parsed_json["eventsinfo"]) flags_parts.push("eventsinfo");
+    if (parsed_json["activedirectoryinfo"]) flags_parts.push("activedirectoryinfo");
+    if (parsed_json["domain"]) flags_parts.push("domain");
+    if (parsed_json["cloudinfo"]) flags_parts.push("cloudinfo");
+    if (parsed_json["windowscreds"]) flags_parts.push("windowscreds");
+    if (parsed_json["browserinfo"]) flags_parts.push("browserinfo");
+    if (parsed_json["filesinfo"]) flags_parts.push("filesinfo");
+    if (parsed_json["fileanalysis"]) flags_parts.push("fileanalysis");
+    if (parsed_json["all"]) flags_parts.push("all");
+    
+    // General flags
+    if (parsed_json["quiet"]) flags_parts.push("quiet");
+    if (parsed_json["wait"]) flags_parts.push("wait");
+    if (parsed_json["debug"]) flags_parts.push("debug");
+    
+    // Additional checks
+    if (parsed_json["lolbas"]) flags_parts.push("lolbas");
+    
+    // Join flags with spaces (BOF will parse both space-separated and dash-concatenated)
+    let flags_str = flags_parts.join(" ");
+    
+    // Pass cmdline as first argument (like SauronEyeBOF) for backward compatibility
+    let bof_params = ax.bof_pack("cstr", [flags_str || cmdline.replace(/^winpeas\s+/, "").trim()]);
+    
+    let cmd = "execute bof";
+    if (ax.agent_info(id, "type") == "kharon") { cmd = "exec-bof"; }
+    
+    ax.execute_alias(id, cmdline, `${cmd} ${bof_path} ${bof_params}`, "BOF implementation: WinPEAS privilege escalation check");
+});
+
+var group_test = ax.create_commands_group("SAL-BOF", [cmd_arp, cmd_cacls, cmd_dir, cmd_env, cmd_ipconfig, cmd_listdns, cmd_netstat, cmd_nslookup, cmd_findobj, cmd_routeprint, cmd_uptime, cmd_useridletime, cmd_whoami, cmd_winpeas]);
 ax.register_commands_group(group_test, ["beacon", "gopher", "kharon"], ["windows"], []);
