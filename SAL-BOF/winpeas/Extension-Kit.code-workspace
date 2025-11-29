@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../PEASS-ng"
+		},
+		{
+			"path": "../../../../../Downloads/Watson-master"
+		}
+	],
+	"settings": {}
+}
